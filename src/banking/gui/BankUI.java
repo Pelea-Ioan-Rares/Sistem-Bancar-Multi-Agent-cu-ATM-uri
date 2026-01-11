@@ -12,7 +12,7 @@ public class BankUI implements UserGUI {
     private CardLayout cards;
 
     private JTextField userField, pinField, amountField;
-    private JTextArea messages;
+    private JTextArea messages; // JTextArea global pentru toate mesajele
 
     private final UserAgent agent;
 
@@ -21,6 +21,7 @@ public class BankUI implements UserGUI {
         createUI();
     }
 
+    /* ===================== UI INIT ===================== */
     private void createUI() {
         frame = new JFrame("Central Bank");
         frame.setSize(500, 380);
@@ -28,18 +29,29 @@ public class BankUI implements UserGUI {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
 
+        // JTextArea global
+        messages = new JTextArea(6, 40);
+        messages.setEditable(false);
+        messages.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        messages.setLineWrap(true);
+        messages.setWrapStyleWord(true);
+        JScrollPane sp = new JScrollPane(messages);
+        sp.setBorder(BorderFactory.createTitledBorder("Messages"));
+
+        // CardLayout pentru panel-uri
         cards = new CardLayout();
         root = new JPanel(cards);
-
         root.add(loginPanel(), "login");
         root.add(transactionPanel(), "txn");
 
-        frame.setContentPane(root);
+        frame.setLayout(new BorderLayout());
+        frame.add(root, BorderLayout.CENTER);
+        frame.add(sp, BorderLayout.SOUTH);
+
         frame.setVisible(true);
     }
 
-    /* ---------- PANELS ---------- */
-
+    /* ===================== PANELS ===================== */
     private JPanel loginPanel() {
         JPanel p = basePanel("Central Bank Login");
 
@@ -85,8 +97,7 @@ public class BankUI implements UserGUI {
         return p;
     }
 
-    /* ---------- ACTIONS ---------- */
-
+    /* ===================== ACTIONS ===================== */
     private void login() {
         String u = userField.getText().trim();
         String p = pinField.getText().trim();
@@ -135,8 +146,7 @@ public class BankUI implements UserGUI {
         SwingUtilities.invokeLater(() -> new MainUI(agent));
     }
 
-    /* ---------- RESPONSES ---------- */
-
+    /* ===================== RESPONSES ===================== */
     @Override
     public void processBankResponse(ACLMessage msg) {
         SwingUtilities.invokeLater(() -> {
@@ -146,6 +156,7 @@ public class BankUI implements UserGUI {
             if (c.startsWith("AUTH_OK") || c.startsWith("ACCOUNT_CREATED")) {
                 cards.show(root, "txn");
             }
+
             if (c.contains(";")) {
                 String[] p = c.split(";");
                 if (p.length == 2) {
@@ -155,33 +166,16 @@ public class BankUI implements UserGUI {
         });
     }
 
-    @Override
-    public void dispose() {
-        frame.dispose();
-    }
-
-    /* ---------- UI HELPERS ---------- */
-
+    /* ===================== HELPERS ===================== */
     private JPanel basePanel(String title) {
         JPanel p = new JPanel(new GridBagLayout());
-        p.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        p.setBorder(BorderFactory.createTitledBorder(title));
 
         JLabel t = new JLabel(title);
         t.setFont(new Font("SansSerif", Font.BOLD, 18));
-
         GridBagConstraints c = gbc(0, 0);
         c.gridwidth = 2;
         p.add(t, c);
-
-        messages = new JTextArea(6, 32);
-        messages.setEditable(false);
-        messages.setFont(new Font("Monospaced", Font.PLAIN, 12));
-
-        JScrollPane sp = new JScrollPane(messages);
-        c = gbc(0, 99);
-        c.gridwidth = 2;
-        c.fill = GridBagConstraints.BOTH;
-        p.add(sp, c);
 
         return p;
     }
@@ -203,6 +197,7 @@ public class BankUI implements UserGUI {
         c.gridy = y;
         c.insets = new Insets(8, 8, 8, 8);
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
         return c;
     }
 
@@ -217,13 +212,30 @@ public class BankUI implements UserGUI {
         return new JButton(t);
     }
 
-    private void info(String m) { messages.append("ℹ " + m + "\n"); }
-    private void success(String m) { messages.append("✔ " + m + "\n"); }
-    private void error(String m) { messages.append("✖ " + m + "\n"); }
+    private void info(String m) {
+        messages.append("ℹ " + m + "\n");
+        messages.setCaretPosition(messages.getDocument().getLength());
+    }
+
+    private void success(String m) {
+        messages.append("✔ " + m + "\n");
+        messages.setCaretPosition(messages.getDocument().getLength());
+    }
+
+    private void error(String m) {
+        messages.append("✖ " + m + "\n");
+        messages.setCaretPosition(messages.getDocument().getLength());
+    }
 
     private void clearFields() {
         userField.setText("");
         pinField.setText("");
         amountField.setText("");
     }
+
+	@Override
+	public void dispose() {
+		// TODO Auto-generated method stub
+		
+	}
 }
